@@ -1,7 +1,7 @@
 ---
-title: "Limpieza de Datos"
-author: "Endika Momoitio Tomé"
-date: "06/06/2020"
+title: "Limpieza de Datos - Práctica Grupo 2"
+author: "Endika Momoitio y Sergi Postigo"
+date: "09/06/2020"
 output:
   pdf_document:
     toc: yes
