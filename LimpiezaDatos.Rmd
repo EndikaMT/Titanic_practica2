@@ -1,0 +1,313 @@
+---
+title: "Limpieza de Datos"
+author: "Endika Momoitio Tomé"
+date: "06/06/2020"
+output:
+  pdf_document:
+    toc: yes
+    latex_engine: xelatex
+  html_document:
+    number_Sections: yes
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. Descripción del Dataset y pregunta que se pretende responder.
+
+El dataset a analizar es un fichero que contiene información sobre los pasajeros del Titanic. El dataset contiene las siguientes variables (columnas):
+
+* **PassengerId**: valor númerico que nos proporciona un ID del pasajeropasajera.
+* **Survived**: nos proporciona información sobre si el pasajero/pasajera sobrevivió o no. 0 = No y 1 = Si.
+* **pclass**: indica la categoría del ticket. Hay 3 valores posibles: 1 = Primera clase, 2 = Segunda clase y 3 = Tecera clase.
+* **name**: nos indica el nombre del pasajero/pasajera.
+* **Sex**: nos indica el sexo del pasajero/pasajera.
+* **Age**: nos indica la edad en años del pasajero/pasajera.
+* **sibsp**: nos indica el número de hermanos/hermanas o pareja abordo del Titanic.
+* **parch**: nos indica el número de padres/hijos abordo del Titanic.
+* **Ticket**: nos indica el número de ticket del pasajero.
+* **fare**: coste del ticket del pasajero/pasajera.
+* **cabin**: número de camarote del pasajero/pasajera.
+* **embarked**: puerto de embarque. 3 posibles valores: C = Cherbourg, Q = Queenstown y S = Southhampton.
+
+Dicho dataset se puede encontrar en la siguiente dirección: https://www.kaggle.com/c/titanic/
+
+La pregunta que queremos responder es si efectivamente, los niños y mujeres sobrevivieron en mayor medida debido a que tuvieron prioridad en el rescate sobre los varones adultos.
+
+
+# 2. Integración y selección de los datos de interés a analizar.
+
+Lo primero que debemos realizar es la carga del fichero para proceder a seleccionar los datos de interés de cara a nuestro análisis. Para ello cargamos primero el CSV y después realizamos la eliminación de las variables que no son interesantes para nuestro análisis.
+
+```{r}
+titanic <- read.csv("train.csv", header = TRUE)
+summary(titanic)
+```
+
+Hacemos la selección de variables a utilizar en base a tres pasos:
+
+* **Variables que sólo proporcionan información de identificación del pasajero, no importante para analizar el ínidice de supervivencia (ejemplo: nombre)**
+
++ **PassengerId**: no necesitamos el ID del pasajero ya que queremos después discernir en dos grupos, los supuestamente preferentes y los no preferentes.
++ **name**: al igual que la columna "PassengerId" no nos proporciona información relevante para el análisis.
++ **ticket**: el identificador del ticket no es importante para analizar tasa de supervivencia en nuestro análisis.
++ **cabin**: descartamos el número de cabina ya que no presenta información relevante para nuestro análisis.
++ **Embarked**: descartamos el puerto de procedencia del pasajero ya que una vez abordo no debería influir en nuestro análisis.
+
+* **Para el resto de variables realizamos un test de correlación entre las variables cuantitativas frente a la variable que queremos explicar: Survived**
+
+```{r}
+# Survived y Pclass
+cor.test(titanic$Survived, titanic$Pclass, method = "pearson", use = "complete.obs") # Utilizamos complete.obs para eliminar campos nulos
+# Survived y Age
+cor.test(titanic$Survived, titanic$Age, method = "pearson", use = "complete.obs") # Utilizamos complete.obs para eliminar campos nulos
+# Survived y SibSp
+cor.test(titanic$Survived, titanic$SibSp, method = "pearson", use = "complete.obs") # Utilizamos complete.obs para eliminar campos nulos
+# Survived y Parch
+cor.test(titanic$Survived, titanic$Parch, method = "pearson", use = "complete.obs") # Utilizamos complete.obs para eliminar campos nulos
+# Survived y Fare
+cor.test(titanic$Survived, titanic$Fare, method = "pearson", use = "complete.obs") # Utilizamos complete.obs para eliminar campos nulos
+```
+
+Vemos que las variables tienen poca correlación con la variable que queremos explicar: Survived por los que la mantenemos. Por otro lado, podemos sospechar una fuerte correlación entre la variable Pclass y Fare ya que, por lógica, los de primera tendrán los tickets más caros.
+
+```{r}
+# Fare y Pclass
+cor.test(titanic$Pclass, titanic$Fare, method = "pearson", use = "complete.obs") # Utilizamos complete.obs para eliminar campos nulos
+```
+
+No hay una correlación tan fuerte como podíamos sospechar por lo que mantenemos la variable también.
+
+```{r}
+titanic2 = subset(titanic, select = -c(PassengerId,Name,Ticket,Cabin,Embarked))
+head(titanic2)
+```
+
+
+# 3. Limpieza de los datos
+
+Antes de nada vamos a analizar que las distintas columnas tengan tipos de datos y valores razonables.
+
+```{r}
+# Comprobamos que cada columna tiene el tipo de dato apropiado.
+str(titanic2)
+
+# Comprobamos que pclass sólo contenga valores 1, 2 y 3.
+unique(titanic2$Pclass)
+
+# Comprobamos que Survived sólo tenga valores 0 y 1.
+unique(titanic2$Survived)
+
+# Comprobamos que sólo hay valores "male" y "female" para el sexo.
+unique(titanic2$Sex)
+```
+
+## 3.1 Identificación de ceros o elementos vaciós
+
+En nuestro dataset podemos encontrar ceros y tiene sentido dicho dato por tanto vamos a centrarnos en analizar los elementos vacios.
+
+```{r}
+# Comprobamos con sapply y haciendo un sum(is.na) cuántos valores nulos hay para cada variable.
+sapply(titanic2, function(x) sum(is.na(x)))
+```
+
+Encontramos en Age diversos valores nulos. Procedemos a sustuir dichos valores con el algoritmo kNN (k-nearest neighbors algorithm). Utilizamos la librería VIM. Es importante recalcar que rellenaremos los valores nulos con el dataset inicial (titanic) ya que aunque hayamos eliminado valores para responder a nuestra pregunta sobre si sobrevivieron más niños y mujeres que hombres, estos datos pueden ser relevantes para hacer una estimación de la edad.
+
+```{r}
+# Cargamos librería VIM omitiendo warnings y mensajes en la carga de la librería.
+suppressWarnings(suppressMessages(library(VIM)))
+# Utilizamos la función kNN sobre el dataset inicial completo.
+titanic2$Age <- kNN(titanic)$Age
+# Volvemos a comprobar que ya no haya valores nulos.
+sapply(titanic2, function(x) sum(is.na(x)))
+```
+
+## 3.2 Identificación de valores extremos (outliers)
+
+Hay variables como Survived, Pclass y Sex que hemos analizado que todos los valores que contienen sean válidos por tanto vamos a analizar las variables: Age, SibSp y Parch.
+
+```{r}
+# Realizamos inicialmente un listado de outliers y después lo representamos gráficamente para cada una de las variables.
+# Edad (Age)
+boxplot.stats(titanic2$Age)$out
+boxplot(titanic2$Age, main = "Age", width = 100)
+# Número de hermanos/hermanas y cónyuje abordo.
+boxplot.stats(titanic2$SibSp)$out
+boxplot(titanic2$SibSp, main = "SibSp", width = 100)
+# Número de padres o hijos abordo.
+boxplot.stats(titanic2$Parch)$out
+boxplot(titanic2$Parch, main = "Parch", width = 100)
+# Coste del ticket (Fare)
+boxplot.stats(titanic2$Fare)$out
+boxplot(titanic2$Fare, main = "Fare", width = 100)
+```
+
+Viendo los datos que se están analizando, aunque puedan parecer outliers (valores extremos), son valores razonables por lo cual no es necesario realizar ninguna limpieza adicional salvo a excepción de Fare, en donde encontramos un valor superior a 500 el cual no tiene sentido.
+
+```{r}
+titanic2 <- titanic2[which(titanic2$Fare < 500),]
+boxplot(titanic2$Fare, main = "Fare", width = 100)
+```
+
+# 4. Análisis de los datos
+
+## 4.1 Selección de los grupos de datos que se quieren analizar y comparar.
+
+Realizamos para este punto, una segregación en dos grupos.
+
+* **Prioritarios (P)**: para mujeres y niños.
+* **No prioritarios (NP)**: para varones adultos.
+
+```{r}
+# Cargamos librería DPLYR omitiendo warnings y mensajes en la carga de la librería.
+# Creamos el grupo P para mujeres y niños (Priority) y el grupo NP para varones adultos.
+suppressMessages(library(dplyr))
+titanic_clean <- titanic2 %>%
+  mutate(Priority = case_when(titanic2$Age < 18 ~ 'P',
+                              titanic2$Sex == "female" ~ 'P',
+                              TRUE ~ 'NP'))
+```
+
+## 4.2 Comprobación de la normalidad y homogeneidad de la varianza.
+
+Realizamos de cara a comprobar la normalidad de las variables, un test Shapiro Wilk sobre las variables numéricas y que sean cuantitativas al igual que histogramas para analizar visualmente si sigue una distribución normal (Campana de Gauss). Compararemos el valor p obtenido frente al valor 0,05.
+
+```{r}
+# Edad (Age)
+hist(titanic2$Age, main = "Age")
+shapiro.test(titanic_clean$Age)
+
+# Número de hermanos/hermanas y cónyuje abordo (SibSp).
+hist(titanic2$SibSp, main = "SibSp")
+shapiro.test(titanic_clean$SibSp)
+
+# Número de hijos o padres abordo (Parch)
+hist(titanic2$Parch, main = "Parch")
+shapiro.test(titanic_clean$Parch)
+
+# Coste del ticket (Fare)
+hist(titanic2$Fare, main = "Fare")
+shapiro.test(titanic_clean$Fare)
+```
+
+Todos los valores P que obtenenmos para cada una de las variables es inferior al coeficiente 0.05 por lo que podemos rechazar la hipótesis nula y afirmar que dichas variables no siguen una distribución normal.
+
+## 4.3 Aplicación de las pruebas estadísticas para comprobar los grupos de datos.
+
+### 4.3.1 Contraste de hipótesis entre dos muestras (prioritarios - niños y mujeres contra no prioritarios - varones adultos)
+
+Creamos inicialmente dos dataset para diferenciar de la gente prioritaria de la que no lo es teóricamente.
+
+```{r}
+# Subset para prioritarios (menores de 18 y mujeres)
+titanic_clean.p <- titanic_clean[titanic_clean$Priority == "P",]
+# Subset para no prioritarios (varones mayores de 18)
+titanic_clean.np <- titanic_clean[titanic_clean$Priority == "NP",]
+head(titanic_clean.p)
+head(titanic_clean.np)
+```
+
+Realizamos inicialmente un contraste de hipótesis para analizar sobre las dos muestras para comprobar si las mujeres y niños tuvieron, efectivamente, un índice de supervivencia más alto. Los datasets diferenciados ya los tenemos, ahora seleccionamos la variable a explicar para poder realizar el contraste de hipótesis de las dos muestras sobre la diferencia de medidas de manera unilateral.
+
+$$ H_0: \mu_1 − \mu_2 = 0$$
+$$H_1: \mu_1 − \mu_2 < 0$$
+En este caso tenemos $$\mu_1$$ como la media para la primera muestra (gente no prioritaria) frente a $$\mu_2$$ como la media para la segunda muestra, gente prioritaria.
+
+```{r}
+titanic_clean.np.Survived <- titanic_clean.np$Survived
+titanic_clean.p.Survived <- titanic_clean.p$Survived
+t.test(titanic_clean.np.Survived, titanic_clean.p.Survived, alternative = "less")
+```
+
+Como resultado, obtenemos un p-valor menor que el valor de significación fijado (0.05) por lo que rechazamos la hipóteis nula y podemos afirmar que efectivamente, los pasajeros priortarios tuvieron un índice de supervivencia más alto que el de no prioritarios.
+
+### 4.3.2 Contraste de hipóteis entre dos muestras (Pasajeros que viajaban en primera y pasajeros que viajaban en segunda y tercera)
+
+
+```{r}
+
+titanic_clean.nonfirst.Survived <- titanic_clean[titanic_clean$Pclass > 1,]$Survived
+titanic_clean.first.Survived <- titanic_clean[titanic_clean$Pclass == 1,]$Survived
+
+head(titanic_clean.nonfirst.Survived)
+head(titanic_clean.first.Survived)
+t.test(titanic_clean.nonfirst.Survived, titanic_clean.first.Survived, alternative = "less")
+```
+
+Obtenemos, al igual que en el contraste anterior, que al tener un p-valor menor que 0,05 rechazamos la hipótesis nula y podemos afirmar que también, en el caso de los pasajeros de primera clase, tuvieron un índice de superviviencia más alto que los pasajeros que viajaban en segunda clase o en tercera independientemente del sexo y edad.
+
+### 4.3.3 Modelo de regresión lineal
+
+De cara a realizar el modelo de regresión lineal haremos los siguientes pasos:
+
+* Crearemos variables para cada una de las columnas con el fin de evitar problemas a la hora de pasar la función lm()
+* Iremos creando modelos añadiendo cada vez más variables y analizando su coeficiente de determinación ajustado R2 adjusted.
+* Es importante centrarnos en el coeficiente de determinación ajustado puesto que al tener un modelo con más de una variable explicativa, al añadir más variables, podríamos obtener un coeficiente de determinación mayor aunque no sea cierto ya que se produce al símplemente añadir variables nuevas
+
+```{r}
+head(titanic_clean)
+# Para evitar problemas a la hora de pasar variables en la función lm (regresión lineal), creamos variables nuevas para cada una de las columnas excepto priority que lo hicimos de cara a diferenciar las muestras.
+
+Survived <- titanic_clean$Survived
+Age <- titanic_clean$Age
+Pclass <- titanic_clean$Pclass
+Sex <- titanic_clean$Sex
+SibSp <- titanic_clean$SibSp
+Parch <- titanic_clean$Parch
+Fare <- titanic_clean$Fare
+
+# Generamos distintos modelos añadiendo cada vez más variables y sacamos el coeficiente R cuadrado para analizar cuál poseé un mayor coeficiente de determinación (R2 ajustado).
+
+m1 <- lm(Survived ~ Age)
+m2 <- lm(Survived ~ Age + Pclass)
+m3 <- lm(Survived ~ Age + Pclass + Sex)
+m4 <- lm(Survived ~ Age + Pclass + Sex + SibSp)
+m5 <- lm(Survived ~ Age + Pclass + Sex + SibSp + Parch)
+m6 <- lm(Survived ~ Age + Pclass + Sex + SibSp + Parch + Fare)
+
+summary(m1)$adj.r.squared
+summary(m2)$adj.r.squared
+summary(m3)$adj.r.squared
+summary(m4)$adj.r.squared
+summary(m5)$adj.r.squared
+summary(m6)$adj.r.squared
+```
+
+Mediante esta comparación de modelos, vemos que el que tiene una mejor bondad de ajuste es el modelo 4. Dicho modelo contiene las variables explicativas Age, Pclass, Sex y SibSp.
+
+Se puede hacer una predicción, por ejemplo, de la siguiente forma usando el modelo ya definido:
+
+```{r}
+predict(m4, data.frame(Age = 21, Pclass = 1, Sex = "male", SibSp = 0), interval = "prediction")
+```
+
+
+# 5. Representación de los resultados a partir de trablas y gráficas.
+
+Para la diagnosis de este modelo se harán dos gráficos: uno con los valores ajustados frente a los residuos (que nos permitirá ver si la varianza es constante) y el gráfico cuantil-cuantil que compara los residuos del modelo con los valores de una variable que se distribuye normalmente(QQ plot). 
+
+```{r}
+# Creamos una variable "residuos" con los residuos del modelo
+residuos <- rstandard(m4)
+
+# Creamos un gráfico para analizar los valores ajustados frente a los resultados
+plot(fitted.values(m4),residuos, xlab="Valores ajustados", ylab="Residuos")
+abline(h=0) #Dibujamos la línea en el valor 0
+
+# Creamos un gráfico cuantil-cuantil que comapra los residuos del modelo con los valores de la variable que se distribuyen normalmente.
+qqnorm(residuos) # gráfico de cuantiles de los residuos estandarizados
+qqline(residuos)
+
+# Obtenemos además de la bondad de ajuste, los valores beta para cada una de las variables, alfa, etc
+summary(m4)
+```
+
+# 6. Resolución del problema
+
+* Hemos creado el modelo *m4* cuya todas variables son significativas (véase el p-value de cada una de ellas en summary(m4)) y es capaz de predecir, pasando información de Edad, Categoría del pasaje, Sexo y número de hermanos/hermanas y pareja abordo.
+
+* Podemos constatar que mujeres y niños tuvieron un índice de superviviencia más alto que el de varones adultos.
+
+* Podemos constatar que los pasajeros que viajaron en primera clase tuvieron un mayor índice de supervivencia que los pasajeros que viajaban en segunda y tercera clase.
