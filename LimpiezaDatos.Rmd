@@ -1,6 +1,6 @@
 ---
 title: "Limpieza de Datos - Práctica Grupo 2"
-author: "Endika Momoitio y Sergi Postigo"
+author: "Endika Momoitio y Sergio Postigo"
 date: "09/06/2020"
 output:
   pdf_document:
@@ -45,6 +45,8 @@ Lo primero que debemos realizar es la carga del fichero para proceder a seleccio
 titanic <- read.csv("train.csv", header = TRUE)
 summary(titanic)
 ```
+
+Podemos ver que el fichero contiene `r nrow(titanic)` registros y `r ncol(titanic)` columnas, que corresponden a `r toString(names(titanic))`.
 
 Hacemos la selección de variables a utilizar en base a tres pasos:
 
@@ -144,7 +146,15 @@ boxplot.stats(titanic2$Fare)$out
 boxplot(titanic2$Fare, main = "Fare", width = 100)
 ```
 
-Viendo los datos que se están analizando, aunque puedan parecer outliers (valores extremos), son valores razonables por lo cual no es necesario realizar ninguna limpieza adicional salvo a excepción de Fare, en donde encontramos un valor superior a 500 el cual no tiene sentido.
+De estos análisis de identificación de valores extremos, podemos ver que:
+
+- Age. Aunque sí aparecen valores extremos, son totalmente correctos, ya que el maximo, como hemos visto previamente es `r max(titanic2$Age)` años.
+
+- SibSp. Aunque la mayoría de los casos es `r median(titanic2$SibSp)` hermanos, era normal en esa época tener `r max(titanic2$SibSp)` hermanos.
+
+- Parch. Al igual que con los hermanos, también era normal que un crucero fuesen hasta `r max(titanic2$Parch)` familiares.
+
+Viendo los datos que se están analizando, aunque puedan parecer outliers (valores extremos), son valores razonables por lo cual no es necesario realizar ninguna limpieza adicional salvo a excepción de Fare, en donde encontramos un valor superior a 500 el cual podría no tener sentido.
 
 ```{r}
 titanic2 <- titanic2[which(titanic2$Fare < 500),]
