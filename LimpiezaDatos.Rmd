@@ -19,9 +19,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 El dataset a analizar es un fichero que contiene información sobre los pasajeros del Titanic. El dataset contiene las siguientes variables (columnas):
 
-* **PassengerId**: valor númerico que nos proporciona un ID del pasajeropasajera.
+* **PassengerId**: valor numérico que nos proporciona un ID del pasajero/pasajera.
 * **Survived**: nos proporciona información sobre si el pasajero/pasajera sobrevivió o no. 0 = No y 1 = Si.
-* **pclass**: indica la categoría del ticket. Hay 3 valores posibles: 1 = Primera clase, 2 = Segunda clase y 3 = Tecera clase.
+* **pclass**: indica la categoría del ticket. Hay 3 valores posibles: 1 = Primera clase, 2 = Segunda clase y 3 = Tercera clase.
 * **name**: nos indica el nombre del pasajero/pasajera.
 * **Sex**: nos indica el sexo del pasajero/pasajera.
 * **Age**: nos indica la edad en años del pasajero/pasajera.
@@ -50,7 +50,7 @@ Podemos ver que el fichero contiene `r nrow(titanic)` registros y `r ncol(titani
 
 Hacemos la selección de variables a utilizar en base a tres pasos:
 
-* **Variables que sólo proporcionan información de identificación del pasajero, no importante para analizar el ínidice de supervivencia (ejemplo: nombre)**
+* **Variables que sólo proporcionan información de identificación del pasajero, no importante para analizar el índice de supervivencia (ejemplo: nombre)**
 
 + **PassengerId**: no necesitamos el ID del pasajero ya que queremos después discernir en dos grupos, los supuestamente preferentes y los no preferentes.
 + **name**: al igual que la columna "PassengerId" no nos proporciona información relevante para el análisis.
@@ -90,7 +90,7 @@ head(titanic2)
 
 # 3. Limpieza de los datos
 
-Antes de nada vamos a analizar que las distintas columnas tengan tipos de datos y valores razonables.
+Primeramente vamos a analizar que las distintas columnas tengan tipos de datos y valores razonables.
 
 ```{r}
 # Comprobamos que cada columna tiene el tipo de dato apropiado.
@@ -106,16 +106,16 @@ unique(titanic2$Survived)
 unique(titanic2$Sex)
 ```
 
-## 3.1 Identificación de ceros o elementos vaciós
+## 3.1 Identificación de ceros o elementos vacíos
 
-En nuestro dataset podemos encontrar ceros y tiene sentido dicho dato por tanto vamos a centrarnos en analizar los elementos vacios.
+En nuestro dataset podemos encontrar ceros y tiene sentido dicho dato por tanto vamos a centrarnos en analizar los elementos vacíos.
 
 ```{r}
 # Comprobamos con sapply y haciendo un sum(is.na) cuántos valores nulos hay para cada variable.
 sapply(titanic2, function(x) sum(is.na(x)))
 ```
 
-Encontramos en Age diversos valores nulos. Procedemos a sustuir dichos valores con el algoritmo kNN (k-nearest neighbors algorithm). Utilizamos la librería VIM. Es importante recalcar que rellenaremos los valores nulos con el dataset inicial (titanic) ya que aunque hayamos eliminado valores para responder a nuestra pregunta sobre si sobrevivieron más niños y mujeres que hombres, estos datos pueden ser relevantes para hacer una estimación de la edad.
+Encontramos en Age diversos valores nulos. Procedemos a sustituir dichos valores con el algoritmo kNN (k-nearest neighbors algorithm) utilizando la librería VIM. Es importante recalcar que rellenaremos los valores nulos con el dataset inicial (titanic) ya que, aunque hayamos eliminado valores para responder a nuestra pregunta sobre si sobrevivieron más niños y mujeres que hombres, estos datos pueden ser relevantes para hacer una estimación de la edad.
 
 ```{r}
 # Cargamos librería VIM omitiendo warnings y mensajes en la carga de la librería.
@@ -135,7 +135,7 @@ Hay variables como Survived, Pclass y Sex que hemos analizado que todos los valo
 # Edad (Age)
 boxplot.stats(titanic2$Age)$out
 boxplot(titanic2$Age, main = "Age", width = 100)
-# Número de hermanos/hermanas y cónyuje abordo.
+# Número de hermanos/hermanas y cónyuge abordo.
 boxplot.stats(titanic2$SibSp)$out
 boxplot(titanic2$SibSp, main = "SibSp", width = 100)
 # Número de padres o hijos abordo.
@@ -148,7 +148,7 @@ boxplot(titanic2$Fare, main = "Fare", width = 100)
 
 De estos análisis de identificación de valores extremos, podemos ver que:
 
-- Age. Aunque sí aparecen valores extremos, son totalmente correctos, ya que el maximo, como hemos visto previamente es `r max(titanic2$Age)` años.
+- Age. Aunque sí aparecen valores extremos, son totalmente correctos, ya que el máximo, como hemos visto previamente es `r max(titanic2$Age)` años.
 
 - SibSp. Aunque la mayoría de los casos es `r median(titanic2$SibSp)` hermanos, era normal en esa época tener `r max(titanic2$SibSp)` hermanos.
 
@@ -189,7 +189,7 @@ Realizamos de cara a comprobar la normalidad de las variables, un test Shapiro W
 hist(titanic2$Age, main = "Age")
 shapiro.test(titanic_clean$Age)
 
-# Número de hermanos/hermanas y cónyuje abordo (SibSp).
+# Número de hermanos/hermanas y cónyuge abordo (SibSp).
 hist(titanic2$SibSp, main = "SibSp")
 shapiro.test(titanic_clean$SibSp)
 
@@ -202,7 +202,7 @@ hist(titanic2$Fare, main = "Fare")
 shapiro.test(titanic_clean$Fare)
 ```
 
-Todos los valores P que obtenenmos para cada una de las variables es inferior al coeficiente 0.05 por lo que podemos rechazar la hipótesis nula y afirmar que dichas variables no siguen una distribución normal.
+Todos los valores P que obtenemos para cada una de las variables es inferior al coeficiente 0.05 por lo que podemos rechazar la hipótesis nula y afirmar que dichas variables no siguen una distribución normal.
 
 ## 4.3 Aplicación de las pruebas estadísticas para comprobar los grupos de datos.
 
@@ -231,10 +231,11 @@ titanic_clean.p.Survived <- titanic_clean.p$Survived
 t.test(titanic_clean.np.Survived, titanic_clean.p.Survived, alternative = "less")
 ```
 
-Como resultado, obtenemos un p-valor menor que el valor de significación fijado (0.05) por lo que rechazamos la hipóteis nula y podemos afirmar que efectivamente, los pasajeros priortarios tuvieron un índice de supervivencia más alto que el de no prioritarios.
+Como resultado, obtenemos un p-valor menor que el valor de significación fijado (0.05) por lo que rechazamos la hipótesis nula y podemos afirmar que efectivamente, los pasajeros prioritarios tuvieron un índice de supervivencia más alto que el de no prioritarios.
 
-### 4.3.2 Contraste de hipóteis entre dos muestras (Pasajeros que viajaban en primera y pasajeros que viajaban en segunda y tercera)
+### 4.3.2 Contraste de hipótesis entre dos muestras (Pasajeros que viajaban en primera y pasajeros que viajaban en segunda y tercera)
 
+Al realizar una comprobación de la correlación entre la variable que queremos explicar (Survived) y el resto de variables, hemos visto que existe cierta correlación entre la variable Pclass y Survived por lo que sería también interesante comprobar si hubo un mayor índice de supervivencia entre gente que viajaba en primera clase y viajeros con pasajes en segunda y tercera clase.
 
 ```{r}
 
@@ -246,7 +247,7 @@ head(titanic_clean.first.Survived)
 t.test(titanic_clean.nonfirst.Survived, titanic_clean.first.Survived, alternative = "less")
 ```
 
-Obtenemos, al igual que en el contraste anterior, que al tener un p-valor menor que 0,05 rechazamos la hipótesis nula y podemos afirmar que también, en el caso de los pasajeros de primera clase, tuvieron un índice de superviviencia más alto que los pasajeros que viajaban en segunda clase o en tercera independientemente del sexo y edad.
+Obtenemos, al igual que en el contraste anterior, que al tener un p-valor menor que 0,05 rechazamos la hipótesis nula y podemos afirmar que también, en el caso de los pasajeros de primera clase, tuvieron un índice de supervivencia más alto que los pasajeros que viajaban en segunda clase o en tercera independientemente del sexo y edad.
 
 ### 4.3.3 Modelo de regresión lineal
 
@@ -254,7 +255,7 @@ De cara a realizar el modelo de regresión lineal haremos los siguientes pasos:
 
 * Crearemos variables para cada una de las columnas con el fin de evitar problemas a la hora de pasar la función lm()
 * Iremos creando modelos añadiendo cada vez más variables y analizando su coeficiente de determinación ajustado R2 adjusted.
-* Es importante centrarnos en el coeficiente de determinación ajustado puesto que al tener un modelo con más de una variable explicativa, al añadir más variables, podríamos obtener un coeficiente de determinación mayor aunque no sea cierto ya que se produce al símplemente añadir variables nuevas
+* Es importante centrarnos en el coeficiente de determinación ajustado puesto que al tener un modelo con más de una variable explicativa, al añadir más variables, podríamos obtener un coeficiente de determinación mayor aunque no sea cierto ya que se produce al simplemente añadir variables nuevas
 
 ```{r}
 head(titanic_clean)
@@ -268,7 +269,7 @@ SibSp <- titanic_clean$SibSp
 Parch <- titanic_clean$Parch
 Fare <- titanic_clean$Fare
 
-# Generamos distintos modelos añadiendo cada vez más variables y sacamos el coeficiente R cuadrado para analizar cuál poseé un mayor coeficiente de determinación (R2 ajustado).
+# Generamos distintos modelos añadiendo cada vez más variables y sacamos el coeficiente R cuadrado para analizar cuál posee un mayor coeficiente de determinación (R2 ajustado).
 
 m1 <- lm(Survived ~ Age)
 m2 <- lm(Survived ~ Age + Pclass)
@@ -296,9 +297,9 @@ predict(m4, data.frame(Age = 21, Pclass = 1, Sex = "male", SibSp = 0), interval 
 ```
 
 
-# 5. Representación de los resultados a partir de trablas y gráficas.
+# 5. Representación de los resultados a partir de tablas y gráficas.
 
-Para la diagnosis de este modelo se harán dos gráficos: uno con los valores ajustados frente a los residuos (que nos permitirá ver si la varianza es constante) y el gráfico cuantil-cuantil que compara los residuos del modelo con los valores de una variable que se distribuye normalmente(QQ plot). 
+Para la diagnosis de este modelo se harán dos gráficos: uno con los valores ajustados frente a los residuos (que nos permitirá ver si la varianza es constante) y el gráfico cuantil-cuantil que compara los residuos del modelo con los valores de una variable que se distribuye normalmente (QQ plot). 
 
 ```{r}
 # Creamos una variable "residuos" con los residuos del modelo
@@ -308,7 +309,7 @@ residuos <- rstandard(m4)
 plot(fitted.values(m4),residuos, xlab="Valores ajustados", ylab="Residuos")
 abline(h=0) #Dibujamos la línea en el valor 0
 
-# Creamos un gráfico cuantil-cuantil que comapra los residuos del modelo con los valores de la variable que se distribuyen normalmente.
+# Creamos un gráfico cuantil-cuantil que compara los residuos del modelo con los valores de la variable que se distribuyen normalmente.
 qqnorm(residuos) # gráfico de cuantiles de los residuos estandarizados
 qqline(residuos)
 
@@ -347,7 +348,7 @@ write.csv(titanic_clean, file = "salida.csv")
 
 * Hemos creado el modelo *m4* cuya todas variables son significativas (véase el p-value de cada una de ellas en summary(m4)) y es capaz de predecir, pasando información de Edad, Categoría del pasaje, Sexo y número de hermanos/hermanas y pareja abordo.
 
-* Podemos constatar que mujeres y niños tuvieron un índice de superviviencia más alto que el de varones adultos. Esto se puede observar mediante el contraste de hipótesis realizado al igual que comprobando la media de la variable Survived para ambos grupos.
+* Podemos constatar que mujeres y niños tuvieron un índice de supervivencia más alto que el de varones adultos. Esto se puede observar mediante el contraste de hipótesis realizado al igual que comprobando la media de la variable Survived para ambos grupos.
 
 * Podemos constatar que los pasajeros que viajaron en primera clase tuvieron un mayor índice de supervivencia que los pasajeros que viajaban en segunda y tercera clase. Esto se puede observar mediante el contraste de hipótesis realizado al igual que comprobando la media de la variable Survived para ambos grupos.
 
@@ -355,7 +356,7 @@ write.csv(titanic_clean, file = "salida.csv")
 
 ```{r}
 text_tbl2 <- data.frame(
-  Contribuciones = c("Investigación previa","Redacción de las respuestas","Desarrollo código"),
+  Contribuciones = c("Investigación previa","Redacción de las respuestas","Desarrollo del código"),
   Firma = c(
     "Endika Momoitio, Sergio Postigo",
     "Endika Momoitio, Sergio Postigo",
