@@ -287,6 +287,8 @@ summary(m6)$adj.r.squared
 
 Mediante esta comparación de modelos, vemos que el que tiene una mejor bondad de ajuste es el modelo 4. Dicho modelo contiene las variables explicativas Age, Pclass, Sex y SibSp.
 
+La ecuación de regresión lineal sería tal como: **Survived** = `r summary(m4)$coefficient[1]` `r summary(m4)$coefficient[2]` **Age** `r summary(m4)$coefficient[3]` **Pclass** `r summary(m4)$coefficient[4]` **Sex** + `r summary(m4)$coefficient[6]` **SibSp**
+
 Se puede hacer una predicción, por ejemplo, de la siguiente forma usando el modelo ya definido:
 
 ```{r}
@@ -312,12 +314,57 @@ qqline(residuos)
 
 # Obtenemos además de la bondad de ajuste, los valores beta para cada una de las variables, alfa, etc
 summary(m4)
+
+# Tabla con los principales indicadores e información del reporte.
+
+suppressMessages(library(kableExtra))
+text_tbl2 <- data.frame(
+  Variables = c("Media de la variable Survived","Media Survived para Prioritarios","Media Survived para no Prioritarios","Media Survived para Primera Clase","Media Survived no Primera Clase","R2 Ajustado modelo regresión"),
+  Informacion = c(
+    mean(titanic_clean$Survived),
+    mean(titanic_clean.p.Survived),
+    mean(titanic_clean.np.Survived),
+    mean(titanic_clean.first.Survived),
+    mean(titanic_clean.nonfirst.Survived),
+    summary(m4)$adj.r.squared
+  )
+)
+
+kable(text_tbl2) %>%
+  kable_styling(full_width = F) %>%
+  column_spec(1, bold = T, border_right = T) %>%
+  column_spec(2, width = "30em")
+
+```
+
+Exportamos también el dataset limpio y con los valores ya analizados a un fichero CSV:
+
+```{r}
+write.csv(titanic_clean, file = "salida.csv")
 ```
 
 # 6. Resolución del problema
 
 * Hemos creado el modelo *m4* cuya todas variables son significativas (véase el p-value de cada una de ellas en summary(m4)) y es capaz de predecir, pasando información de Edad, Categoría del pasaje, Sexo y número de hermanos/hermanas y pareja abordo.
 
-* Podemos constatar que mujeres y niños tuvieron un índice de superviviencia más alto que el de varones adultos.
+* Podemos constatar que mujeres y niños tuvieron un índice de superviviencia más alto que el de varones adultos. Esto se puede observar mediante el contraste de hipótesis realizado al igual que comprobando la media de la variable Survived para ambos grupos.
 
-* Podemos constatar que los pasajeros que viajaron en primera clase tuvieron un mayor índice de supervivencia que los pasajeros que viajaban en segunda y tercera clase.
+* Podemos constatar que los pasajeros que viajaron en primera clase tuvieron un mayor índice de supervivencia que los pasajeros que viajaban en segunda y tercera clase. Esto se puede observar mediante el contraste de hipótesis realizado al igual que comprobando la media de la variable Survived para ambos grupos.
+
+# 7. Participantes de la práctica y aportación
+
+```{r}
+text_tbl2 <- data.frame(
+  Contribuciones = c("Investigación previa","Redacción de las respuestas","Desarrollo código"),
+  Firma = c(
+    "Endika Momoitio, Sergio Postigo",
+    "Endika Momoitio, Sergio Postigo",
+    "Endika Momoitio, Sergio Postigo"
+  )
+)
+
+kable(text_tbl2) %>%
+  kable_styling(full_width = F) %>%
+  column_spec(1, bold = T, border_right = T) %>%
+  column_spec(2, width = "30em")
+```
